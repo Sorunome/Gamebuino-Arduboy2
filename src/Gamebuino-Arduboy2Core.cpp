@@ -249,9 +249,7 @@ void Arduboy2Core::flipHorizontal(bool flipped)
 
 void Arduboy2Core::setRGBled(uint8_t r, uint8_t g, uint8_t b)
 {
-  for (uint8_t i = 0; i < gb.neoPixels.numPixels(); i++) {
-    gb.neoPixels.setPixelColor(i, r, g, b);
-  }
+  digitalWriteRGB(r, g, b);
 }
 
 uint8_t gamebuino_red = 0;

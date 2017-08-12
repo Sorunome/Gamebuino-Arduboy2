@@ -15,8 +15,8 @@
 
 uint8_t Arduboy2Base::sBuffer[];
 
-uint8_t gamebuino_frameskip = true;
-uint8_t gamebuino_frameskip_alternator = true;
+bool gamebuino_frameskip = true;
+bool gamebuino_frameskip_alternator = true;
 
 Arduboy2Base::Arduboy2Base()
 {
@@ -175,14 +175,25 @@ bool Arduboy2Base::everyXFrames(uint8_t frames)
 
 bool Arduboy2Base::nextFrame()
 {
-  if (!gamebuino_frameskip) {
-    return gb.update();
-  }
   unsigned long now = millis();
+  if (justRendered) {
+    lastFrameDurationMs = now - lastFrameStart;
+    justRendered = false;
+  }
+  if (!gamebuino_frameskip) {
+    if (!gb.update()) {
+      return false;
+    }
+    frameCount++;
+    lastFrameStart = now;
+    return true;
+  }
   if (gb.update()) {
     nextFrameStart = now + eachFrameMillis;
     gamebuino_frameskip_alternator = true;
     gamebuino_updateNeoPixels();
+    frameCount++;
+    lastFrameStart = now;
     return true;
   }
   if (now < nextFrameStart) {
@@ -190,6 +201,8 @@ bool Arduboy2Base::nextFrame()
   }
   nextFrameStart = now + eachFrameMillis;
   gamebuino_frameskip_alternator = false;
+  frameCount++;
+  lastFrameStart = now;
   // we still need to manually update some stuff
   // actually this would make the home-menu barely accessible
   //gb.buttons.update();
@@ -203,7 +216,7 @@ bool Arduboy2Base::nextFrameDEV()
 
 int Arduboy2Base::cpuLoad()
 {
-  return gb.getCpuLoad();
+  return lastFrameDurationMs*100 / eachFrameMillis;
 }
 
 void Arduboy2Base::initRandomSeed()
@@ -524,10 +537,7 @@ void Arduboy2Base::fillScreen(uint8_t color)
   {
     color = 0xFF; // all pixels on
   }
-  for (int16_t i = 0; i < WIDTH * HEIGHT / 8; i++)
-  {
-    sBuffer[i] = color;
-  }
+  memset(sBuffer, color, (WIDTH*HEIGHT) / 8);
 }
 
 void Arduboy2Base::drawRoundRect
