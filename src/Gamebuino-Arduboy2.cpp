@@ -4,7 +4,8 @@
  * The Arduboy2Base and Arduboy2 classes and support objects and definitions.
  */
 
-#include "Arduboy2.h"
+#include <Gamebuino-Meta.h>
+#include "Gamebuino-Arduboy2.h"
 #include "ab_logo.c"
 #include "glcdfont.c"
 
@@ -13,6 +14,9 @@
 //========================================
 
 uint8_t Arduboy2Base::sBuffer[];
+
+uint8_t gamebuino_frameskip = true;
+uint8_t gamebuino_frameskip_alternator = true;
 
 Arduboy2Base::Arduboy2Base()
 {
@@ -45,47 +49,16 @@ void Arduboy2Base::begin()
   audio.begin();
 
   bootLogo();
-  // alternative logo functions. Work the same a bootLogo() but may reduce
-  // memory size if the sketch uses the same bitmap drawing function
-//  bootLogoCompressed();
-//  bootLogoSpritesSelfMasked();
-//  bootLogoSpritesOverwrite();
-
-  // wait for all buttons to be released
-  do {
-    delayShort(50);
-  } while (buttonsState());
 }
 
 void Arduboy2Base::flashlight()
 {
-  if (!pressed(UP_BUTTON)) {
-    return;
-  }
-
-  sendLCDCommand(OLED_ALL_PIXELS_ON); // smaller than allPixelsOn()
-  digitalWriteRGB(RGB_ON, RGB_ON, RGB_ON);
-
-  // prevent the bootloader magic number from being overwritten by timer 0
-  // when a timer variable overlaps the magic number location, for when
-  // flashlight mode is used for upload problem recovery
-  power_timer0_disable();
-
-  while (true) {
-    idle();
-  }
+  return; // who needs flashlight mode?
 }
 
 void Arduboy2Base::systemButtons()
 {
-  while (pressed(B_BUTTON)) {
-    digitalWriteRGB(BLUE_LED, RGB_ON); // turn on blue LED
-    sysCtrlSound(UP_BUTTON + B_BUTTON, GREEN_LED, 0xff);
-    sysCtrlSound(DOWN_BUTTON + B_BUTTON, RED_LED, 0);
-    delayShort(200);
-  }
-
-  digitalWriteRGB(BLUE_LED, RGB_OFF); // turn off blue LED
+  return; // who needs these startup checks?
 }
 
 void Arduboy2Base::sysCtrlSound(uint8_t buttons, uint8_t led, uint8_t eeVal)
@@ -147,8 +120,11 @@ void Arduboy2Base::drawLogoSpritesOverwrite(int16_t y)
 void Arduboy2Base::bootLogoShell(void (*drawLogo)(int16_t))
 {
   digitalWriteRGB(RED_LED, RGB_ON);
-
-  for (int16_t y = -18; y <= 24; y++) {
+  int16_t y = -18;
+  do {
+    if (!nextFrame()) {
+      continue;
+    }
     if (pressed(RIGHT_BUTTON)) {
       digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF); // all LEDs off
       return;
@@ -166,13 +142,8 @@ void Arduboy2Base::bootLogoShell(void (*drawLogo)(int16_t))
     clear();
     (*drawLogo)(y); // call the function that actually draws the logo
     display();
-    delayShort(27);
-    // longer delay post boot, we put it inside the loop to
-    // save the flash calling clear/delay again outside the loop
-    if (y==-16) {
-      delayShort(250);
-    }
-  }
+    y++;
+  } while (y <= 24);
 
   delayShort(700);
   digitalWriteRGB(BLUE_LED, RGB_OFF);
@@ -187,7 +158,14 @@ void Arduboy2Base::bootLogoExtra() { }
 
 void Arduboy2Base::setFrameRate(uint8_t rate)
 {
-  eachFrameMillis = 1000 / rate;
+  if (rate >= 40) {
+    gamebuino_frameskip = true;
+    eachFrameMillis = 1000 / rate;
+    gb.setFrameRate(rate / 2);
+  } else {
+    gamebuino_frameskip = false;
+    gb.setFrameRate(rate);
+  }
 }
 
 bool Arduboy2Base::everyXFrames(uint8_t frames)
@@ -197,72 +175,40 @@ bool Arduboy2Base::everyXFrames(uint8_t frames)
 
 bool Arduboy2Base::nextFrame()
 {
+  if (!gamebuino_frameskip) {
+    return gb.update();
+  }
   unsigned long now = millis();
-  bool tooSoonForNextFrame = now < nextFrameStart;
-
-  if (justRendered) {
-    lastFrameDurationMs = now - lastFrameStart;
-    justRendered = false;
+  if (gb.update()) {
+    nextFrameStart = now + eachFrameMillis;
+    gamebuino_frameskip_alternator = true;
+    gamebuino_updateNeoPixels();
+    return true;
+  }
+  if (now < nextFrameStart) {
     return false;
   }
-  else if (tooSoonForNextFrame) {
-    // if we have MORE than 1ms to spare (hence our comparison with 2),
-    // lets sleep for power savings.  We don't compare against 1 to avoid
-    // potential rounding errors - say we're actually 0.5 ms away, but a 1
-    // is returned if we go to sleep we might sleep a full 1ms and then
-    // we'd be running the frame slighly late.  So the last 1ms we stay
-    // awake for perfect timing.
-
-    // This is likely trading power savings for absolute timing precision
-    // and the power savings might be the better goal. At 60 FPS trusting
-    // chance here might actually achieve a "truer" 60 FPS than the 16ms
-    // frame duration we get due to integer math.
-
-    // We should be woken up by timer0 every 1ms, so it's ok to sleep.
-    if ((uint8_t)(nextFrameStart - now) >= 2)
-      idle();
-
-    return false;
-  }
-
-  // pre-render
-  justRendered = true;
-  lastFrameStart = now;
   nextFrameStart = now + eachFrameMillis;
-  frameCount++;
-
+  gamebuino_frameskip_alternator = false;
+  // we still need to manually update some stuff
+  // actually this would make the home-menu barely accessible
+  //gb.buttons.update();
   return true;
 }
 
 bool Arduboy2Base::nextFrameDEV()
 {
-  bool ret = nextFrame();
-
-  if (ret) {
-    if (lastFrameDurationMs > eachFrameMillis)
-      TXLED1;
-    else
-      TXLED0;
-  }
-  return ret;
+  return nextFrame();
 }
 
 int Arduboy2Base::cpuLoad()
 {
-  return lastFrameDurationMs*100 / eachFrameMillis;
+  return gb.getCpuLoad();
 }
 
 void Arduboy2Base::initRandomSeed()
 {
-  power_adc_enable(); // ADC on
-
-  // do an ADC read from an unconnected input pin
-  ADCSRA |= _BV(ADSC); // start conversion (ADMUX has been pre-set in boot())
-  while (bit_is_set(ADCSRA, ADSC)) { } // wait for conversion complete
-
-  randomSeed(((unsigned long)ADC << 16) + micros());
-
-  power_adc_disable(); // ADC off
+  gb.pickRandomSeed();
 }
 
 /* Graphics */
@@ -292,40 +238,13 @@ void Arduboy2Base::drawPixel(int16_t x, int16_t y, uint8_t color)
   uint16_t row_offset;
   uint8_t bit;
 
-  // uint8_t row = (uint8_t)y / 8;
-  // row_offset = (row*WIDTH) + (uint8_t)x;
-  // bit = _BV((uint8_t)y % 8);
+  uint8_t row = (uint8_t)y / 8;
+  row_offset = (row*WIDTH) + (uint8_t)x;
+  bit = _BV((uint8_t)y % 8);
 
-  // the above math can also be rewritten more simply as;
-  //   row_offset = (y * WIDTH/8) & ~0b01111111 + (uint8_t)x;
-  // which is what the below assembler does
 
   // local variable for the bitshift_left array pointer,
   // which can be declared a read-write operand
-  const uint8_t* bsl = bitshift_left;
-
-  asm volatile
-  (
-    "mul %[width_offset], %A[y]\n"
-    "movw %[row_offset], r0\n"
-    "andi %A[row_offset], 0x80\n" // row_offset &= (~0b01111111);
-    "clr __zero_reg__\n"
-    "add %A[row_offset], %[x]\n"
-    // mask for only 0-7
-    "andi %A[y], 0x07\n"
-    // Z += y
-    "add r30, %A[y]\n"
-    "adc r31, __zero_reg__\n"
-    // load correct bitshift from program RAM
-    "lpm %[bit], Z\n"
-    : [row_offset] "=&x" (row_offset), // upper register (ANDI)
-      [bit] "=r" (bit),
-      [y] "+d" (y), // upper register (ANDI), must be writable
-      "+z" (bsl) // is modified to point to the proper shift array element
-    : [width_offset] "r" ((uint8_t)(WIDTH/8)),
-      [x] "r" ((uint8_t)x)
-    :
-  );
 
   if (color) {
     sBuffer[row_offset] |=   bit;
@@ -601,48 +520,14 @@ void Arduboy2Base::fillScreen(uint8_t color)
 {
   // C version:
   //
-  // if (color != BLACK)
-  // {
-  //   color = 0xFF; // all pixels on
-  // }
-  // for (int16_t i = 0; i < WIDTH * HEIGTH / 8; i++)
-  // {
-  //    sBuffer[i] = color;
-  // }
-
-  // This asm version is hard coded for 1024 bytes. It doesn't use the defined
-  // WIDTH and HEIGHT values. It will have to be modified for a different
-  // screen buffer size.
-  // It also assumes color value for BLACK is 0.
-
-  // local variable for screen buffer pointer,
-  // which can be declared a read-write operand
-  uint8_t* bPtr = sBuffer;
-
-  asm volatile
-  (
-    // if value is zero, skip assigning to 0xff
-    "cpse %[color], __zero_reg__\n"
-    "ldi %[color], 0xFF\n"
-    // counter = 0
-    "clr __tmp_reg__\n"
-    "loopto:\n"
-    // (4x) push zero into screen buffer,
-    // then increment buffer position
-    "st Z+, %[color]\n"
-    "st Z+, %[color]\n"
-    "st Z+, %[color]\n"
-    "st Z+, %[color]\n"
-    // increase counter
-    "inc __tmp_reg__\n"
-    // repeat for 256 loops
-    // (until counter rolls over back to 0)
-    "brne loopto\n"
-    : [color] "+d" (color),
-      "+z" (bPtr)
-    :
-    :
-  );
+  if (color != BLACK)
+  {
+    color = 0xFF; // all pixels on
+  }
+  for (int16_t i = 0; i < WIDTH * HEIGHT / 8; i++)
+  {
+    sBuffer[i] = color;
+  }
 }
 
 void Arduboy2Base::drawRoundRect
@@ -979,12 +864,22 @@ void Arduboy2Base::drawCompressed(int16_t sx, int16_t sy, const uint8_t *bitmap,
 
 void Arduboy2Base::display()
 {
+  if (gamebuino_frameskip && !gamebuino_frameskip_alternator) {
+    return;
+  }
+  gb.display.fillScreen(INDEX_GREEN);
+  gb.display.setColor(INDEX_WHITE);
+  gb.display.fontSize = 2;
+  gb.display.print("Arduboy Game");
   paintScreen(sBuffer);
 }
 
 void Arduboy2Base::display(bool clear)
 {
-  paintScreen(sBuffer, clear);
+  display();
+  if (clear) {
+    memset(sBuffer, 0, (WIDTH*HEIGHT) / 8);
+  }
 }
 
 uint8_t* Arduboy2Base::getBuffer()
@@ -1314,4 +1209,3 @@ void Arduboy2::clear()
     Arduboy2Base::clear();
     cursor_x = cursor_y = 0;
 }
-

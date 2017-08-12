@@ -8,7 +8,7 @@
 #define ARDUBOY2_AUDIO_H
 
 #include <Arduino.h>
-#include <EEPROM.h>
+#include <Gamebuino-EEPROM.h>
 
 /** \brief
  * Provide speaker and sound control.

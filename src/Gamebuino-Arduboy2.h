@@ -8,9 +8,9 @@
 #define ARDUBOY2_H
 
 #include <Arduino.h>
-#include <EEPROM.h>
-#include "Arduboy2Core.h"
-#include "Sprites.h"
+#include <Gamebuino-EEPROM.h>
+#include "Gamebuino-Arduboy2Core.h"
+#include "Gamebuino-ArduboySprites.h"
 #include <Print.h>
 #include <limits.h>
 
@@ -60,7 +60,7 @@
 #define EEPROM_STORAGE_SPACE_START 16
 
 // eeprom settings above are neded for audio
-#include "Arduboy2Audio.h"
+#include "Gamebuino-Arduboy2Audio.h"
 
 // If defined, it is safe to draw outside of the screen boundaries.
 // Pixels that would exceed the display limits will be ignored.
@@ -1432,4 +1432,3 @@ class Arduboy2 : public Print, public Arduboy2Base
 };
 
 #endif
-

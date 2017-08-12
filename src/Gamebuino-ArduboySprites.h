@@ -7,7 +7,7 @@
 #ifndef Sprites_h
 #define Sprites_h
 
-#include "Arduboy2.h"
+#include "Gamebuino-Arduboy2.h"
 
 #define SPRITE_MASKED 1
 #define SPRITE_UNMASKED 2

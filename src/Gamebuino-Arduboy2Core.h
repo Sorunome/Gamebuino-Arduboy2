@@ -8,10 +8,12 @@
 #define ARDUBOY2_CORE_H
 
 #include <Arduino.h>
-#include <avr/power.h>
-#include <avr/sleep.h>
+#define _BV(x) (1 << x)
+//#include <avr/power.h>
+//#include <avr/sleep.h>
 #include <limits.h>
 
+#include <Gamebuino-Meta.h>
 
 // main hardware compile flags
 
@@ -35,185 +37,25 @@
 #define RGB_ON LOW   /**< For digitially setting an RGB LED on using digitalWriteRGB() */
 #define RGB_OFF HIGH /**< For digitially setting an RGB LED off using digitalWriteRGB() */
 
-// ----- Arduboy pins -----
-#ifdef ARDUBOY_10
-
-#define PIN_CS 12       // Display CS Arduino pin number
-#define CS_PORT PORTD   // Display CS port
-#define CS_BIT PORTD6   // Display CS physical bit number
-
-#define PIN_DC 4        // Display D/C Arduino pin number
-#define DC_PORT PORTD   // Display D/C port
-#define DC_BIT PORTD4   // Display D/C physical bit number
-
-#define PIN_RST 6       // Display reset Arduino pin number
-#define RST_PORT PORTD  // Display reset port
-#define RST_BIT PORTD7  // Display reset physical bit number
-
-#define SPI_MOSI_PORT PORTB
-#define SPI_MOSI_BIT PORTB2
-
-#define SPI_SCK_PORT PORTB
-#define SPI_SCK_BIT PORTB1
-
-#define RED_LED 10   /**< The pin number for the red color in the RGB LED. */
-#define GREEN_LED 11 /**< The pin number for the greem color in the RGB LED. */
-#define BLUE_LED 9   /**< The pin number for the blue color in the RGB LED. */
-
-#define RED_LED_PORT PORTB
-#define RED_LED_BIT PORTB6
-
-#define GREEN_LED_PORT PORTB
-#define GREEN_LED_BIT PORTB7
-
-#define BLUE_LED_PORT PORTB
-#define BLUE_LED_BIT PORTB5
 
 // bit values for button states
-// these are determined by the buttonsState() function
-#define LEFT_BUTTON _BV(5)  /**< The Left button value for functions requiring a bitmask */
-#define RIGHT_BUTTON _BV(6) /**< The Right button value for functions requiring a bitmask */
-#define UP_BUTTON _BV(7)    /**< The Up button value for functions requiring a bitmask */
-#define DOWN_BUTTON _BV(4)  /**< The Down button value for functions requiring a bitmask */
-#define A_BUTTON _BV(3)     /**< The A button value for functions requiring a bitmask */
-#define B_BUTTON _BV(2)     /**< The B button value for functions requiring a bitmask */
-
-#define PIN_LEFT_BUTTON A2
-#define LEFT_BUTTON_PORT PORTF
-#define LEFT_BUTTON_BIT PORTF5
-
-#define PIN_RIGHT_BUTTON A1
-#define RIGHT_BUTTON_PORT PORTF
-#define RIGHT_BUTTON_BIT PORTF6
-
-#define PIN_UP_BUTTON A0
-#define UP_BUTTON_PORT PORTF
-#define UP_BUTTON_BIT PORTF7
-
-#define PIN_DOWN_BUTTON A3
-#define DOWN_BUTTON_PORT PORTF
-#define DOWN_BUTTON_BIT PORTF4
-
-#define PIN_A_BUTTON 7
-#define A_BUTTON_PORT PORTE
-#define A_BUTTON_BIT PORTE6
-
-#define PIN_B_BUTTON 8
-#define B_BUTTON_PORT PORTB
-#define B_BUTTON_BIT PORTB4
-
-#define PIN_SPEAKER_1 5  /**< The pin number of the first lead of the speaker */
-#define PIN_SPEAKER_2 13 /**< The pin number of the second lead of the speaker */
-
-#define SPEAKER_1_PORT PORTC
-#define SPEAKER_1_DDR DDRC
-#define SPEAKER_1_BIT PORTC6
-
-#define SPEAKER_2_PORT PORTC
-#define SPEAKER_2_DDR DDRC
-#define SPEAKER_2_BIT PORTC7
-
-#define RAND_SEED_IN A4 // Open analog input used for noise by initRandomSeed()
-#define RAND_SEED_IN_PORTF
-#define RAND_SEED_IN_BIT PORTF1
-// Value for ADMUX to read the random seed pin: 2.56V reference, ADC1
-#define RAND_SEED_IN_ADMUX (_BV(REFS0) | _BV(REFS1) | _BV(MUX0))
-// -----------------------
-
-// ----- DevKit pins -----
-#elif defined(AB_DEVKIT)
-
-#define PIN_CS 6        // Display CS Arduino pin number
-#define CS_PORT PORTD   // Display CS port
-#define CS_BIT PORTD7   // Display CS physical bit number
-
-#define PIN_DC 4        // Display D/C Arduino pin number
-#define DC_PORT PORTD   // Display D/C port
-#define DC_BIT PORTD4   // Display D/C physical bit number
-
-#define PIN_RST 12      // Display reset Arduino pin number
-#define RST_PORT PORTD  // Display reset port
-#define RST_BIT PORTD6  // Display reset physical bit number
-
-#define SPI_MOSI_PORT PORTB
-#define SPI_MOSI_BIT PORTB2
-
-#define SPI_SCK_PORT PORTB
-#define SPI_SCK_BIT PORTB1
-
-// map all LEDs to the single TX LED on DEVKIT
-#define RED_LED 17
-#define GREEN_LED 17
-#define BLUE_LED 17
-
-#define BLUE_LED_PORT PORTB
-#define BLUE_LED_BIT PORTB0
-
-// bit values for button states
-// these are determined by the buttonsState() function
 #define LEFT_BUTTON _BV(5)
-#define RIGHT_BUTTON _BV(2)
-#define UP_BUTTON _BV(4)
-#define DOWN_BUTTON _BV(6)
-#define A_BUTTON _BV(1)
-#define B_BUTTON _BV(0)
+#define RIGHT_BUTTON _BV(6)
+#define UP_BUTTON _BV(7)
+#define DOWN_BUTTON _BV(4)
+#define A_BUTTON _BV(3)
+#define B_BUTTON _BV(2)
 
-// pin values for buttons, probably shouldn't use these
-#define PIN_LEFT_BUTTON 9
-#define LEFT_BUTTON_PORT PORTB
-#define LEFT_BUTTON_BIT PORTB5
+#define RED_LED 10
+#define GREEN_LED 11
+#define BLUE_LED 9
 
-#define PIN_RIGHT_BUTTON 5
-#define RIGHT_BUTTON_PORT PORTC
-#define RIGHT_BUTTON_BIT PORTC6
+// defined needed so that games will compile
+#define PIN_SPEAKER_1 5
+#define PIN_SPEAKER_2 13
 
-#define PIN_UP_BUTTON 8
-#define UP_BUTTON_PORT PORTB
-#define UP_BUTTON_BIT PORTB4
 
-#define PIN_DOWN_BUTTON 10
-#define DOWN_BUTTON_PORT PORTB
-#define DOWN_BUTTON_BIT PORTB6
-
-#define PIN_A_BUTTON A0
-#define A_BUTTON_PORT PORTF
-#define A_BUTTON_BIT PORTF7
-
-#define PIN_B_BUTTON A1
-#define B_BUTTON_PORT PORTF
-#define B_BUTTON_BIT PORTF6
-
-#define PIN_SPEAKER_1 A2
-#define SPEAKER_1_PORT PORTF
-#define SPEAKER_1_DDR DDRF
-#define SPEAKER_1_BIT PORTF5
-// SPEAKER_2 is purposely not defined for DEVKIT as it could potentially
-// be dangerous and fry your hardware (because of the devkit wiring).
-//
-// Reference: https://github.com/Arduboy/Arduboy/issues/108
-
-#define RAND_SEED_IN A4 // Open analog input used for noise by initRandomSeed()
-#define RAND_SEED_IN_PORTF
-#define RAND_SEED_IN_BIT PORTF1
-// Value for ADMUX to read the random seed pin: 2.56V reference, ADC1
-#define RAND_SEED_IN_ADMUX (_BV(REFS0) | _BV(REFS1) | _BV(MUX0))
-
-#endif
-// --------------------
-
-// OLED hardware (SSD1306)
-
-#define OLED_PIXELS_INVERTED 0xA7 // All pixels inverted
-#define OLED_PIXELS_NORMAL 0xA6 // All pixels normal
-
-#define OLED_ALL_PIXELS_ON 0xA5 // all pixels on
-#define OLED_PIXELS_FROM_RAM 0xA4 // pixels mapped to display RAM contents
-
-#define OLED_VERTICAL_FLIPPED 0xC0 // reversed COM scan direction
-#define OLED_VERTICAL_NORMAL 0xC8 // normal COM scan direction
-
-#define OLED_HORIZ_FLIPPED 0xA0 // reversed segment re-map
-#define OLED_HORIZ_NORMAL 0xA1 // normal segment re-map
+typedef uint8_t u8;
 
 // -----
 
@@ -637,6 +479,8 @@ class Arduboy2Core
      * \see digitalWriteRGB(uint8_t, uint8_t, uint8_t) setRGBled()
      */
     void static digitalWriteRGB(uint8_t color, uint8_t val);
+    
+    void static gamebuino_updateNeoPixels();
 
     /** \brief
      * Initialize the Arduboy's hardware.
