@@ -15,8 +15,8 @@
 
 uint8_t Arduboy2Base::sBuffer[];
 
-bool gamebuino_frameskip = true;
-bool gamebuino_frameskip_alternator = true;
+uint8_t gamebuino_frameskip_counter = 0;
+uint8_t gamebuino_frameskip_max = 1;
 
 Arduboy2Base::Arduboy2Base()
 {
@@ -158,14 +158,12 @@ void Arduboy2Base::bootLogoExtra() { }
 
 void Arduboy2Base::setFrameRate(uint8_t rate)
 {
-  if (rate >= 40) {
-    gamebuino_frameskip = true;
-    eachFrameMillis = 1000 / rate;
-    gb.setFrameRate(rate / 2);
-  } else {
-    gamebuino_frameskip = false;
-    gb.setFrameRate(rate);
+  gamebuino_frameskip_max = 1;
+  while (rate > 20) {
+    rate -= 20;
+    gamebuino_frameskip_max++;
   }
+  gb.setFrameRate(rate);
 }
 
 bool Arduboy2Base::everyXFrames(uint8_t frames)
@@ -175,37 +173,29 @@ bool Arduboy2Base::everyXFrames(uint8_t frames)
 
 bool Arduboy2Base::nextFrame()
 {
-  unsigned long now = millis();
-  if (justRendered) {
-    lastFrameDurationMs = now - lastFrameStart;
-    justRendered = false;
-  }
-  if (!gamebuino_frameskip) {
+  gamebuino_frameskip_counter++;
+  if (gamebuino_frameskip_counter >= gamebuino_frameskip_max) {
+    gamebuino_frameskip_counter = 0;
     if (!gb.update()) {
       return false;
     }
-    frameCount++;
-    lastFrameStart = now;
-    return true;
-  }
-  if (gb.update()) {
-    nextFrameStart = now + eachFrameMillis;
-    gamebuino_frameskip_alternator = true;
+    //if (gb.frameCount % 0x10 == 0) {
+    //  SerialUSB.print("gb update ");
+    //  SerialUSB.println(lastFrameDurationMs);
+    //}
     gamebuino_updateNeoPixels();
     frameCount++;
-    lastFrameStart = now;
     return true;
   }
-  if (now < nextFrameStart) {
-    return false;
-  }
-  nextFrameStart = now + eachFrameMillis;
-  gamebuino_frameskip_alternator = false;
+  //if (gb.frameCount % 0x10 == 0) {
+  //  SerialUSB.print("frameskip update ");
+  //  SerialUSB.println(lastFrameDurationMs);
+  //}
+  gamebuino_updateNeoPixels();
   frameCount++;
-  lastFrameStart = now;
   // we still need to manually update some stuff
-  // actually this would make the home-menu barely accessible
-  //gb.buttons.update();
+  gb.buttons.update();
+  gb.checkHomeMenu();
   return true;
 }
 
@@ -216,7 +206,7 @@ bool Arduboy2Base::nextFrameDEV()
 
 int Arduboy2Base::cpuLoad()
 {
-  return lastFrameDurationMs*100 / eachFrameMillis;
+  return gb.getCpuLoad();
 }
 
 void Arduboy2Base::initRandomSeed()
@@ -874,13 +864,15 @@ void Arduboy2Base::drawCompressed(int16_t sx, int16_t sy, const uint8_t *bitmap,
 
 void Arduboy2Base::display()
 {
-  if (gamebuino_frameskip && !gamebuino_frameskip_alternator) {
+  if (gamebuino_frameskip_counter) {
     return;
   }
   gb.display.fillScreen(INDEX_GREEN);
   gb.display.setColor(INDEX_WHITE);
   gb.display.fontSize = 2;
-  gb.display.print("Arduboy Game");
+  gb.display.println("Arduboy Game");
+  gb.display.print("CPU:");
+  gb.display.print(gb.getCpuLoad());
   paintScreen(sBuffer);
 }
 
