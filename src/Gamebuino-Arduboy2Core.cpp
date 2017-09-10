@@ -286,9 +286,7 @@ void Arduboy2Core::digitalWriteRGB(uint8_t color, uint8_t param)
 }
 
 void Arduboy2Core::gamebuino_updateNeoPixels() {
-  for (uint8_t i = 0; i < gb.neoPixels.numPixels(); i++) {
-    gb.neoPixels.setPixelColor(i, gamebuino_red, gamebuino_green, gamebuino_blue);
-  }
+  gb.light.fillScreen(gb.createColor(gamebuino_red, gamebuino_green, gamebuino_blue));
 }
 
 /* Buttons */
