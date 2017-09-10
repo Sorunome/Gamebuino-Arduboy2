@@ -12,22 +12,26 @@ bool Arduboy2Audio::audio_enabled = false;
 
 void Arduboy2Audio::on()
 {
-  // trash, we want people to do this via the gamebuino home menu
+  gb.sound.unmute();
 }
 
 void Arduboy2Audio::off()
 {
-  // trash, we want people to do this via the gamebuino home menu
+  gb.sound.mute();
 }
 
 void Arduboy2Audio::toggle()
 {
-  // trash, we want people to do this via the gamebuino home menu
+  if (gb.sound.isMute()) {
+    gb.sound.unmute();
+  } else {
+    gb.sound.mute();
+  }
 }
 
 void Arduboy2Audio::saveOnOff()
 {
-  // trash, we want people to do this via the gamebuino home menu
+  gb.settings.set(SETTING_VOLUME_MUTE, (int32_t)gb.sound.isMute());
 }
 
 void Arduboy2Audio::begin()
@@ -37,5 +41,5 @@ void Arduboy2Audio::begin()
 
 bool Arduboy2Audio::enabled()
 {
-  return true;
+  return !gb.sound.isMute();
 }
