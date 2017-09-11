@@ -169,33 +169,49 @@ void Arduboy2Core::paint8Pixels(uint8_t pixels)
 //  SPItransfer(pixels);
 }
 
+const uint8_t gb_lookup[] = {
+    ((uint8_t)INDEX_WHITE << 4) | (uint8_t)INDEX_WHITE,
+    ((uint8_t)INDEX_WHITE << 4) | (uint8_t)INDEX_BLACK,
+    ((uint8_t)INDEX_BLACK << 4) | (uint8_t)INDEX_WHITE,
+    ((uint8_t)INDEX_BLACK << 4) | (uint8_t)INDEX_BLACK,
+};
+
 void Arduboy2Core::paintScreen(const uint8_t *image)
 {
   uint8_t x = (gb.display.width() - WIDTH) / 2;
   uint8_t y = (gb.display.height() - HEIGHT) / 2;
+  uint8_t* buf = (uint8_t*)gb.display._buffer;
+  uint8_t display_bytewidth = gb.display.width() / 2;
+  buf += y*(display_bytewidth) + (x / 2);
+  uint8_t* _buf = buf;
+  uint8_t* __buf = buf;
   
   uint8_t w = WIDTH;
   uint8_t h = HEIGHT;
   uint8_t byteHeight = (h + 7) / 8;
-  uint8_t _x = x;
   for (uint8_t j = 0; j < byteHeight; j++) {
-    for (uint8_t i = 0; i < w; i++) {
-      uint8_t b = *(image++);
+    for (uint8_t i = 0; i < w; i += 2) {
+      uint8_t b1 = *(image++);
+      uint8_t b2 = *(image++);
       for (uint8_t k = 0; k < 8; k++) {
-        if (b & 0x01) {
-          gb.display.setColor(INDEX_WHITE);
-        } else {
-          gb.display.setColor(INDEX_BLACK);
+        uint8_t index = 0;
+        if (!(b1 & 0x01)) {
+          index += 2;
         }
-        gb.display.drawPixel(x, y);
-        b >>= 1;
-        y++;
+        if (!(b2 & 0x01)) {
+          index++;
+        }
+        *buf = gb_lookup[index];
+        b1 >>= 1;
+        b2 >>= 1;
+        buf += display_bytewidth;
       }
-      y -= 8;
-      x++;
+      _buf++;
+      buf = _buf;
     }
-    y += 8;
-    x = _x;
+    __buf += display_bytewidth*8;
+    _buf = __buf;
+    buf = _buf;
   }
 }
 

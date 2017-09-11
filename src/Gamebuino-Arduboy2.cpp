@@ -175,10 +175,11 @@ bool Arduboy2Base::nextFrame()
 {
   gamebuino_frameskip_counter++;
   if (gamebuino_frameskip_counter >= gamebuino_frameskip_max) {
-    gamebuino_frameskip_counter = 0;
+    gamebuino_frameskip_counter--; // if we return false we want to land here again
     if (!gb.update()) {
       return false;
     }
+    gamebuino_frameskip_counter = 0;
     //if (gb.frameCount % 0x10 == 0) {
     //  SerialUSB.print("gb update ");
     //  SerialUSB.println(lastFrameDurationMs);
@@ -192,10 +193,12 @@ bool Arduboy2Base::nextFrame()
   //  SerialUSB.println(lastFrameDurationMs);
   //}
   gamebuino_updateNeoPixels();
-  frameCount++;
   // we still need to manually update some stuff
-  gb.buttons.update();
-  gb.checkHomeMenu();
+  if (!frameCount) {
+    gb.buttons.update();
+    gb.checkHomeMenu();
+  }
+  frameCount++;
   return true;
 }
 
@@ -867,11 +870,10 @@ void Arduboy2Base::display()
   if (gamebuino_frameskip_counter) {
     return;
   }
-  gb.display.fillScreen(INDEX_GREEN);
-  gb.display.setColor(INDEX_WHITE);
+  gb.display.setCursors(0, 0);
   gb.display.fontSize = 2;
-  gb.display.println("Arduboy Game");
-  gb.display.print("CPU:");
+  //gb.display.println("Arduboy Game");
+  //gb.display.print("CPU:");
   gb.display.print(gb.getCpuLoad());
   paintScreen(sBuffer);
 }
