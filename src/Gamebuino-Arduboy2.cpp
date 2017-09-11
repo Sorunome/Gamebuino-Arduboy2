@@ -872,8 +872,8 @@ void Arduboy2Base::display()
   }
   gb.display.setCursors(0, 0);
   gb.display.fontSize = 2;
-  //gb.display.println("Arduboy Game");
-  //gb.display.print("CPU:");
+  gb.display.println("Arduboy Game");
+  gb.display.print("CPU:");
   gb.display.print(gb.getCpuLoad());
   paintScreen(sBuffer);
 }

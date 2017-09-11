@@ -129,6 +129,11 @@ void Sprites::drawBitmap(int16_t x, int16_t y,
   uint8_t mul_amt = 1 << yOffset;
   uint16_t mask_data;
   uint16_t bitmap_data;
+  
+  uint8_t* buf = Arduboy2Base::sBuffer + ofs;
+  uint8_t* _buf = buf;
+  uint8_t dw = w - rendered_width;
+  uint8_t dbuf = WIDTH - rendered_width;
 
   switch (draw_mode) {
     case SPRITE_UNMASKED:
@@ -163,6 +168,27 @@ void Sprites::drawBitmap(int16_t x, int16_t y,
       break;
 
     case SPRITE_IS_MASK:
+      _buf += WIDTH;
+      for (uint8_t a = 0; a < loop_h; a++) {
+        for (uint8_t iCol = 0; iCol < rendered_width; iCol++) {
+          bitmap_data = *(bofs++) * mul_amt;
+          if (sRow >= 0) {
+            *buf |= (uint8_t)bitmap_data;
+          }
+          if (yOffset != 0 && sRow < 7) {
+            bitmap_data >>= 8;
+            *_buf |= (uint8_t)bitmap_data;
+          }
+          buf++;
+          _buf++;
+        }
+        sRow++;
+        bofs += dw;
+        buf += dbuf;
+        _buf += dbuf;
+      }
+      
+      /*
       for (uint8_t a = 0; a < loop_h; a++) {
         for (uint8_t iCol = 0; iCol < rendered_width; iCol++) {
           bitmap_data = pgm_read_byte(bofs) * mul_amt;
@@ -179,7 +205,7 @@ void Sprites::drawBitmap(int16_t x, int16_t y,
         sRow++;
         bofs += w - rendered_width;
         ofs += WIDTH - rendered_width;
-      }
+      }*/
       break;
 
     case SPRITE_IS_MASK_ERASE:
