@@ -227,7 +227,7 @@ void Arduboy2Core::paintScreen(uint8_t image[], bool clear)
 
 void Arduboy2Core::blank()
 {
-  gb.display.fillScreen(Color::white);
+  // trash
 }
 
 void Arduboy2Core::sendLCDCommand(uint8_t command)
@@ -302,7 +302,7 @@ void Arduboy2Core::digitalWriteRGB(uint8_t color, uint8_t param)
 }
 
 void Arduboy2Core::gamebuino_updateNeoPixels() {
-  gb.light.fillScreen(gb.createColor(gamebuino_red, gamebuino_green, gamebuino_blue));
+  gb.light.fill(gb.createColor(gamebuino_red, gamebuino_green, gamebuino_blue));
 }
 
 /* Buttons */
