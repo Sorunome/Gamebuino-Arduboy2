@@ -159,6 +159,10 @@ void Arduboy2Base::bootLogoExtra() { }
 void Arduboy2Base::setFrameRate(uint8_t rate)
 {
   gamebuino_frameskip_max = 1;
+  if (rate <= 30) {
+    gb.setFrameRate(30);
+    return;
+  }
   while (rate > 20) {
     rate -= 20;
     gamebuino_frameskip_max++;
@@ -873,8 +877,8 @@ void Arduboy2Base::display()
   gb.display.setCursors(0, 0);
   gb.display.fontSize = 2;
   gb.display.println("Arduboy Game");
-  //gb.display.print("CPU:");
-  //gb.display.print(gb.getCpuLoad());
+  gb.display.print("CPU:");
+  gb.display.print(gb.getCpuLoad());
   paintScreen(sBuffer);
 }
 
