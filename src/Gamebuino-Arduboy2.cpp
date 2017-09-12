@@ -163,8 +163,8 @@ void Arduboy2Base::setFrameRate(uint8_t rate)
     gb.setFrameRate(30);
     return;
   }
-  while (rate > 20) {
-    rate -= 20;
+  while (rate > 30) {
+    rate -= 30;
     gamebuino_frameskip_max++;
   }
   gb.setFrameRate(rate);
@@ -180,7 +180,7 @@ bool Arduboy2Base::nextFrame()
   gamebuino_frameskip_counter++;
   if (gamebuino_frameskip_counter >= gamebuino_frameskip_max) {
     gamebuino_frameskip_counter--; // if we return false we want to land here again
-    if (!gb.update()) {
+    if (!gb.updatePersistent()) {
       return false;
     }
     gamebuino_frameskip_counter = 0;
@@ -871,14 +871,17 @@ void Arduboy2Base::drawCompressed(int16_t sx, int16_t sy, const uint8_t *bitmap,
 
 void Arduboy2Base::display()
 {
+  if ((frameCount % 60) == 0) {
+    SerialUSB.println(gb.getCpuLoad());
+  }
   if (gamebuino_frameskip_counter) {
     return;
   }
-  gb.display.setCursors(0, 0);
-  gb.display.fontSize = 2;
-  gb.display.println("Arduboy Game");
-  gb.display.print("CPU:");
-  gb.display.print(gb.getCpuLoad());
+  //gb.display.setCursors(4*4*2, 2*6);
+  //gb.display.fontSize = 2;
+  //gb.display.setColor(INDEX_WHITE, INDEX_GREEN);
+  //gb.display.print(gb.getCpuLoad());
+  //gb.display.print(" ");
   paintScreen(sBuffer);
 }
 
