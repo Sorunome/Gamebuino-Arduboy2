@@ -75,19 +75,28 @@ const uint8_t PROGMEM lcdBootProgram[] = {
 
 Arduboy2Core::Arduboy2Core() { }
 
+void gb_drawScreenBackground() {
+  gb.tft.fill(INDEX_GREEN);
+  gb.tft.setColor(INDEX_WHITE, INDEX_GREEN);
+  gb.tft.setCursors(0, 0);
+  gb.tft.fontSize = 2;
+  gb.tft.println("Arduboy Game");
+}
+
+namespace Gamebuino_Meta {
+void Hook_ExitHomeMenu() {
+  gb_drawScreenBackground();
+}
+}; // namespace Gamebuino_Meta
+
 void Arduboy2Core::boot()
 {
   gb.begin();
   EEPROM.begin(1024);
   // and now let's draw the arduboy background screen stuffs
   
-  gb.display.fill(INDEX_GREEN);
-  gb.display.setColor(INDEX_WHITE, INDEX_GREEN);
-  gb.display.setCursors(0, 0);
-  gb.display.fontSize = 2;
-  gb.display.println("Arduboy Game");
-  gb.updateDisplay();
   gb.display.init(0, 0, ColorMode::index);
+  gb_drawScreenBackground();
 }
 
 #ifdef ARDUBOY_SET_CPU_8MHZ

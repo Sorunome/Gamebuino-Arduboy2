@@ -159,8 +159,10 @@ void Arduboy2Base::bootLogoExtra() { }
 void Arduboy2Base::setFrameRate(uint8_t rate)
 {
   gamebuino_frameskip_max = 1;
+  gb.setFrameRate(rate);
+  return;
   if (rate <= 30) {
-    gb.setFrameRate(30);
+    gb.setFrameRate(rate);
     return;
   }
   while (rate > 30) {
@@ -871,17 +873,9 @@ void Arduboy2Base::drawCompressed(int16_t sx, int16_t sy, const uint8_t *bitmap,
 
 void Arduboy2Base::display()
 {
-  if ((frameCount % 60) == 0) {
-    SerialUSB.println(gb.getCpuLoad());
-  }
   if (gamebuino_frameskip_counter) {
     return;
   }
-  //gb.display.setCursors(4*4*2, 2*6);
-  //gb.display.fontSize = 2;
-  //gb.display.setColor(INDEX_WHITE, INDEX_GREEN);
-  //gb.display.print(gb.getCpuLoad());
-  //gb.display.print(" ");
   paintScreen(sBuffer);
 }
 
