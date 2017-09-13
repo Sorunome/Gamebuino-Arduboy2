@@ -6,6 +6,7 @@
 
 #include <Gamebuino-Meta.h>
 #include "Gamebuino-Arduboy2.h"
+#include "Gamebuino-Arduboy-Compat.h"
 #include "ab_logo.c"
 #include "glcdfont.c"
 
@@ -30,6 +31,14 @@ Arduboy2Base::Arduboy2Base()
   // init not necessary, will be reset after first use
   // lastFrameStart
   // lastFrameDurationMs
+  
+  
+  cursor_x = 0;
+  cursor_y = 0;
+  textColor = 1;
+  textBackground = 0;
+  textSize = 1;
+  textWrap = 0;
 }
 
 // functions called here should be public so users can create their
@@ -151,25 +160,11 @@ void Arduboy2Base::bootLogoShell(void (*drawLogo)(int16_t))
   bootLogoExtra();
 }
 
-// Virtual function overridden by derived class
-void Arduboy2Base::bootLogoExtra() { }
-
 /* Frame management */
 
 void Arduboy2Base::setFrameRate(uint8_t rate)
 {
-  gamebuino_frameskip_max = 1;
-  gb.setFrameRate(rate);
-  return;
-  if (rate <= 30) {
-    gb.setFrameRate(rate);
-    return;
-  }
-  while (rate > 30) {
-    rate -= 30;
-    gamebuino_frameskip_max++;
-  }
-  gb.setFrameRate(rate);
+  Gamebuino_Arduboy::gba.setFrameRate(rate, this);
 }
 
 bool Arduboy2Base::everyXFrames(uint8_t frames)
@@ -179,33 +174,7 @@ bool Arduboy2Base::everyXFrames(uint8_t frames)
 
 bool Arduboy2Base::nextFrame()
 {
-  gamebuino_frameskip_counter++;
-  if (gamebuino_frameskip_counter >= gamebuino_frameskip_max) {
-    gamebuino_frameskip_counter--; // if we return false we want to land here again
-    if (!gb.updatePersistent()) {
-      return false;
-    }
-    gamebuino_frameskip_counter = 0;
-    //if (gb.frameCount % 0x10 == 0) {
-    //  SerialUSB.print("gb update ");
-    //  SerialUSB.println(lastFrameDurationMs);
-    //}
-    gamebuino_updateNeoPixels();
-    frameCount++;
-    return true;
-  }
-  //if (gb.frameCount % 0x10 == 0) {
-  //  SerialUSB.print("frameskip update ");
-  //  SerialUSB.println(lastFrameDurationMs);
-  //}
-  gamebuino_updateNeoPixels();
-  // we still need to manually update some stuff
-  if (!frameCount) {
-    gb.buttons.update();
-    gb.checkHomeMenu();
-  }
-  frameCount++;
-  return true;
+  return Gamebuino_Arduboy::gba.nextFrame(this);
 }
 
 bool Arduboy2Base::nextFrameDEV()
@@ -222,14 +191,6 @@ void Arduboy2Base::initRandomSeed()
 {
   gb.pickRandomSeed();
 }
-
-/* Graphics */
-
-void Arduboy2Base::clear()
-{
-  fillScreen(BLACK);
-}
-
 
 // Used by drawPixel to help with left bitshifting since AVR has no
 // multiple bit shift instruction.  We can bit shift from a lookup table
@@ -873,9 +834,10 @@ void Arduboy2Base::drawCompressed(int16_t sx, int16_t sy, const uint8_t *bitmap,
 
 void Arduboy2Base::display()
 {
-  if (gamebuino_frameskip_counter) {
+  if (Gamebuino_Arduboy::gba.frameskip()) {
     return;
   }
+  Gamebuino_Arduboy::gba.displayPrework(this);
   paintScreen(sBuffer);
 }
 
@@ -946,38 +908,15 @@ void Arduboy2Base::writeUnitID(uint16_t id)
 
 uint8_t Arduboy2Base::readUnitName(char* name)
 {
-  char val;
-  uint8_t dest;
-  uint8_t src = EEPROM_UNIT_NAME;
-
-  for (dest = 0; dest < ARDUBOY_UNIT_NAME_LEN; dest++)
-  {
-    val = EEPROM.read(src);
-    name[dest] = val;
-    src++;
-    if (val == 0x00 || (byte)val == 0xFF) {
-      break;
-    }
-  }
-
-  name[dest] = 0x00;
-  return dest;
+  char n[13];
+  gb.getDefaultName(n);
+  strncpy(name, n, ARDUBOY_UNIT_NAME_LEN);
+  return strlen(n) + 1;
 }
 
 void Arduboy2Base::writeUnitName(char* name)
 {
-  bool done = false;
-  uint8_t dest = EEPROM_UNIT_NAME;
-
-  for (uint8_t src = 0; src < ARDUBOY_UNIT_NAME_LEN; src++)
-  {
-    if (name[src] == 0x00) {
-      done = true;
-    }
-    // write character or 0 pad if finished
-    EEPROM.update(dest, done ? 0x00 : name[src]);
-    dest++;
-  }
+  return; // sorry, we only allow that via loader.bin
 }
 
 bool Arduboy2Base::readShowUnitNameFlag()
@@ -1005,19 +944,10 @@ void Arduboy2Base::swap(int16_t& a, int16_t& b)
 //========== class Arduboy2 ==========
 //====================================
 
-Arduboy2::Arduboy2()
-{
-  cursor_x = 0;
-  cursor_y = 0;
-  textColor = 1;
-  textBackground = 0;
-  textSize = 1;
-  textWrap = 0;
-}
 
 // bootLogoText() should be kept in sync with bootLogoShell()
 // if changes are made to one, equivalent changes should be made to the other
-void Arduboy2::bootLogoText()
+void Arduboy2Base::bootLogoText()
 {
   digitalWriteRGB(RED_LED, RGB_ON);
 
@@ -1059,7 +989,7 @@ void Arduboy2::bootLogoText()
   bootLogoExtra();
 }
 
-void Arduboy2::bootLogoExtra()
+void Arduboy2Base::bootLogoExtra()
 {
   uint8_t c;
 
@@ -1088,7 +1018,7 @@ void Arduboy2::bootLogoExtra()
   }
 }
 
-size_t Arduboy2::write(uint8_t c)
+size_t Arduboy2Base::write(uint8_t c)
 {
   if (c == '\n')
   {
@@ -1113,7 +1043,7 @@ size_t Arduboy2::write(uint8_t c)
   return 1;
 }
 
-void Arduboy2::drawChar
+void Arduboy2Base::drawChar
   (int16_t x, int16_t y, unsigned char c, uint8_t color, uint8_t bg, uint8_t size)
 {
   uint8_t line;
@@ -1152,65 +1082,65 @@ void Arduboy2::drawChar
   }
 }
 
-void Arduboy2::setCursor(int16_t x, int16_t y)
+void Arduboy2Base::setCursor(int16_t x, int16_t y)
 {
   cursor_x = x;
   cursor_y = y;
 }
 
-int16_t Arduboy2::getCursorX()
+int16_t Arduboy2Base::getCursorX()
 {
   return cursor_x;
 }
 
-int16_t Arduboy2::getCursorY()
+int16_t Arduboy2Base::getCursorY()
 {
   return cursor_y;
 }
 
-void Arduboy2::setTextColor(uint8_t color)
+void Arduboy2Base::setTextColor(uint8_t color)
 {
   textColor = color;
 }
 
-uint8_t Arduboy2::getTextColor()
+uint8_t Arduboy2Base::getTextColor()
 {
   return textColor;
 }
 
-void Arduboy2::setTextBackground(uint8_t bg)
+void Arduboy2Base::setTextBackground(uint8_t bg)
 {
   textBackground = bg;
 }
 
-uint8_t Arduboy2::getTextBackground()
+uint8_t Arduboy2Base::getTextBackground()
 {
   return textBackground;
 }
 
-void Arduboy2::setTextSize(uint8_t s)
+void Arduboy2Base::setTextSize(uint8_t s)
 {
   // size must always be 1 or higher
   textSize = max(1, s);
 }
 
-uint8_t Arduboy2::getTextSize()
+uint8_t Arduboy2Base::getTextSize()
 {
   return textSize;
 }
 
-void Arduboy2::setTextWrap(bool w)
+void Arduboy2Base::setTextWrap(bool w)
 {
   textWrap = w;
 }
 
-bool Arduboy2::getTextWrap()
+bool Arduboy2Base::getTextWrap()
 {
   return textWrap;
 }
 
-void Arduboy2::clear()
+void Arduboy2Base::clear()
 {
-    Arduboy2Base::clear();
-    cursor_x = cursor_y = 0;
+  fillScreen(BLACK);
+  cursor_x = cursor_y = 0;
 }

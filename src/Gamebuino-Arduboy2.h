@@ -157,7 +157,7 @@ struct Point
  *
  * \see Arduboy2
  */
-class Arduboy2Base : public Arduboy2Core
+class Arduboy2Base : public Print, public Arduboy2Core
 {
  friend class Arduboy2Ex;
 
@@ -328,20 +328,6 @@ class Arduboy2Base : public Arduboy2Core
    * \see bootLogo() boot()
    */
   void bootLogoShell(void (*drawLogo)(int16_t));
-
-  // Called by bootLogoShell() to allow derived classes to display additional
-  // information after the logo stops scrolling down.
-  virtual void bootLogoExtra();
-
-  /** \brief
-   * Clear the display buffer.
-   *
-   * \details
-   * The entire contents of the screen buffer are cleared to BLACK.
-   *
-   * \see display(bool)
-   */
-  void clear();
 
   /** \brief
    * Copy the contents of the display buffer to the display.
@@ -1124,7 +1110,7 @@ class Arduboy2Base : public Arduboy2Core
   unsigned long nextFrameStart;
   bool justRendered;
   uint8_t lastFrameDurationMs;
-};
+//};
 
 
 //==============================
@@ -1148,12 +1134,12 @@ class Arduboy2Base : public Arduboy2Core
  *
  * \see Arduboy2Base
  */
-class Arduboy2 : public Print, public Arduboy2Base
-{
- friend class Arduboy2Ex;
+//class Arduboy2 : public Print, public Arduboy2Base
+//{
+// friend class Arduboy2Ex;
 
  public:
-  Arduboy2();
+//  Arduboy2();
 
   /** \class Print
    * \brief
@@ -1429,6 +1415,11 @@ class Arduboy2 : public Print, public Arduboy2Base
   uint8_t textBackground;
   uint8_t textSize;
   bool textWrap;
+};
+
+class Arduboy2 : public Arduboy2Base
+{
+ friend class Arduboy2Ex;
 };
 
 #endif

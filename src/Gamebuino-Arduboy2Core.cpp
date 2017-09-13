@@ -4,9 +4,11 @@
  * The Arduboy2Core class for Arduboy hardware initilization and control.
  */
 
+#include "Gamebuino-Arduboy-Compat.h"
 #include "Gamebuino-Arduboy2Core.h"
 #include <Gamebuino-Meta.h>
 #include <Gamebuino-EEPROM.h>
+#include "Gamebuino-Arduboy-Compat.h"
 
 const uint8_t PROGMEM lcdBootProgram[] = {
   // boot defaults are commented out but left here in case they
@@ -75,28 +77,14 @@ const uint8_t PROGMEM lcdBootProgram[] = {
 
 Arduboy2Core::Arduboy2Core() { }
 
-void gb_drawScreenBackground() {
-  gb.tft.fill(INDEX_GREEN);
-  gb.tft.setColor(INDEX_WHITE, INDEX_GREEN);
-  gb.tft.setCursors(0, 0);
-  gb.tft.fontSize = 2;
-  gb.tft.println("Arduboy Game");
-}
-
-namespace Gamebuino_Meta {
-void Hook_ExitHomeMenu() {
-  gb_drawScreenBackground();
-}
-}; // namespace Gamebuino_Meta
-
 void Arduboy2Core::boot()
 {
   gb.begin();
   EEPROM.begin(1024);
+  Gamebuino_Arduboy::gba.init();
   // and now let's draw the arduboy background screen stuffs
   
-  gb.display.init(0, 0, ColorMode::index);
-  gb_drawScreenBackground();
+  Gamebuino_Arduboy::gba.drawScreenBackground();
 }
 
 #ifdef ARDUBOY_SET_CPU_8MHZ
@@ -187,111 +175,10 @@ void Arduboy2Core::paint8Pixels(uint8_t pixels)
 //  SPItransfer(pixels);
 }
 
-const uint8_t gb_lookup[] = {
-    ((uint8_t)INDEX_WHITE << 4) | (uint8_t)INDEX_WHITE,
-    ((uint8_t)INDEX_WHITE << 4) | (uint8_t)INDEX_BLACK,
-    ((uint8_t)INDEX_BLACK << 4) | (uint8_t)INDEX_WHITE,
-    ((uint8_t)INDEX_BLACK << 4) | (uint8_t)INDEX_BLACK,
-};
-
-#include <utility/Adafruit_ZeroDMA.h>
-namespace Gamebuino_Meta {
-extern Adafruit_ZeroDMA myDMA;
-extern volatile bool transfer_is_done;
-
-static SPISettings mySPISettings = SPISettings(24000000, MSBFIRST, SPI_MODE0);
-}; // namespace Gamebuino_Meta
-
-void prepareLine(const uint8_t* buf, uint8_t bitshift, uint16_t* destination) {
-  for (uint8_t x = 0; x < WIDTH; x++) {
-    uint8_t b = *(buf++);
-    b >>= bitshift;
-    *(destination++) = (b & 0x01) ? 0xFFFF : 0;
-  }
-}
-
-uint16_t preBufferLineArray[WIDTH];
-uint16_t sendBufferLineArray[WIDTH];
-uint16_t *preBufferLine = preBufferLineArray;
-uint16_t *sendBufferLine = sendBufferLineArray;
 
 void Arduboy2Core::paintScreen(const uint8_t *image)
 {
-  uint8_t x = (gb.display.width() - WIDTH) / 2;
-  uint8_t y = (gb.display.height() - HEIGHT) / 2;
-  gb.tft.setAddrWindow(
-    x,
-    y,
-    x + WIDTH - 1,
-    y + HEIGHT - 1
-  );
-  prepareLine(image, 0, preBufferLine);
-  uint8_t bitshift = 0;
-  
-  SPI.beginTransaction(Gamebuino_Meta::mySPISettings);
-  gb.tft.dataMode();
-  for (uint8_t y = 1; y < HEIGHT; y++) {
-    //swap buffers pointers
-    uint16_t *temp = preBufferLine;
-    preBufferLine = sendBufferLine;
-    sendBufferLine = temp;
-    
-    PORT->Group[0].OUTSET.reg = (1 << 17); // set PORTA.17 high	"digitalWrite(13, HIGH)"
-    gb.tft.sendBuffer(sendBufferLine, WIDTH); //start DMA send
-    
-    bitshift++;
-    if (bitshift >= 8) {
-      bitshift = 0;
-      image += WIDTH;
-    }
-    prepareLine(image, bitshift, preBufferLine);
-    PORT->Group[0].OUTCLR.reg = (1 << 17); // clear PORTA.17 high "digitalWrite(13, LOW)"
-    while (!Gamebuino_Meta::transfer_is_done); // chill
-    Gamebuino_Meta::myDMA.free();
-  }
-  gb.tft.sendBuffer(preBufferLine, WIDTH);
-  while (!Gamebuino_Meta::transfer_is_done); // chill
-  Gamebuino_Meta::myDMA.free();
-  gb.tft.idleMode();
-  SPI.endTransaction();
-  
-  /*
-  uint8_t x = (gb.display.width() - WIDTH) / 2;
-  uint8_t y = (gb.display.height() - HEIGHT) / 2;
-  uint8_t* buf = (uint8_t*)gb.display._buffer;
-  uint8_t display_bytewidth = gb.display.width() / 2;
-  buf += y*(display_bytewidth) + (x / 2);
-  uint8_t* _buf = buf;
-  uint8_t* __buf = buf;
-  
-  uint8_t w = WIDTH;
-  uint8_t h = HEIGHT;
-  uint8_t byteHeight = (h + 7) / 8;
-  for (uint8_t j = 0; j < byteHeight; j++) {
-    for (uint8_t i = 0; i < w; i += 2) {
-      uint8_t b1 = *(image++);
-      uint8_t b2 = *(image++);
-      for (uint8_t k = 0; k < 8; k++) {
-        uint8_t index = 0;
-        if (!(b1 & 0x01)) {
-          index += 2;
-        }
-        if (!(b2 & 0x01)) {
-          index++;
-        }
-        *buf = gb_lookup[index];
-        b1 >>= 1;
-        b2 >>= 1;
-        buf += display_bytewidth;
-      }
-      _buf++;
-      buf = _buf;
-    }
-    __buf += display_bytewidth*8;
-    _buf = __buf;
-    buf = _buf;
-  }
-  */
+  Gamebuino_Arduboy::gba.paintScreen(image);
 }
 
 // paint from a memory buffer, this should be FAST as it's likely what
