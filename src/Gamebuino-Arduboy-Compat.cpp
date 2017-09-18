@@ -117,7 +117,7 @@ bool Gamebuino_Arduboy::nextFrame(Arduboy2Base* a) {
 	frameskip_counter++;
 	if (frameskip_counter >= frameskip_max) {
 		frameskip_counter--; // if we return false we want to land here again
-		if (!gb.updatePersistent()) {
+		if (!gb.update()) {
 			return false;
 		}
 		frameskip_counter = 0;
@@ -168,11 +168,13 @@ const uint8_t gb_lookup[] = {
 };
 
 void Gamebuino_Arduboy::paintScreen(const uint8_t* image) {
-	uint8_t x = (gb.display.width() - WIDTH) / 2;
-	uint8_t y = (gb.display.height() - HEIGHT) / 2;
+	const uint8_t gb_display_width = 160;
+	const uint8_t gb_display_height = 128;
+	uint8_t x = (gb_display_width - WIDTH) / 2;
+	uint8_t y = (gb_display_height - HEIGHT) / 2;
 	if (!dispUseDMA) {
 		uint8_t* buf = (uint8_t*)gb.display._buffer;
-		uint8_t display_bytewidth = gb.display.width() / 2;
+		uint8_t display_bytewidth = gb_display_width / 2;
 		buf += y*(display_bytewidth) + (x / 2);
 		uint8_t* _buf = buf;
 		uint8_t* __buf = buf;
@@ -277,6 +279,7 @@ void Gamebuino_Arduboy::settings() {
 		if (!gb.update()) {
 			continue;
 		}
+		gb.display.clear(INDEX_GREEN);
 		gb.display.fontSize = 2;
 		gb.display.setColor(INDEX_WHITE);
 		gb.display.println("Settings\n");
