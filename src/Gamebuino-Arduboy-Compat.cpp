@@ -3,6 +3,9 @@
 #include <utility/Adafruit_ZeroDMA.h>
 extern Gamebuino gb;
 
+#include "language.h"
+
+
 namespace Gamebuino_Arduboy {
 bool is_in_settings = false;
 }; // namespace Gamebuino_Arduboy
@@ -262,12 +265,12 @@ void Gamebuino_Arduboy::drawScreenBackground() {
 	img->setColor(INDEX_WHITE);
 	img->setCursors(0, 0);
 	img->fontSize = 2;
-	img->print("Arduboy Game");
+	img->print(gb.language.get(lang_arduboy_game));
 	img->setCursors(0, 116);
 	img->setColor(INDEX_BEIGE);
 	img->print("\x17");
 	img->setColor(INDEX_WHITE);
-	img->print("settings");
+	img->print(gb.language.get(lang_settings));
 }
 
 void Gamebuino_Arduboy::settings() {
@@ -282,34 +285,41 @@ void Gamebuino_Arduboy::settings() {
 		gb.display.clear(INDEX_GREEN);
 		gb.display.fontSize = 2;
 		gb.display.setColor(INDEX_WHITE);
-		gb.display.println("Settings\n");
-		gb.display.print(" disp CPU ");
+		gb.language.print(lang_settings);
+		gb.display.print("\n\n ");
+		gb.language.print(lang_settings_cpu);
+		gb.display.print(" ");
 		if (dispCpu) {
 			gb.display.setColor(INDEX_BLACK);
-			gb.display.println("ON");
+			gb.language.println(lang_settings_on);
 		} else {
 			gb.display.setColor(INDEX_RED);
-			gb.display.println("OFF");
+			gb.language.println(lang_settings_off);
 		}
 		gb.display.setColor(INDEX_WHITE);
-		gb.display.print(" disp frameskip ");
+		gb.display.print(" ");
+		gb.language.print(lang_settings_frameskip);
+		gb.display.print(" ");
 		if (dispFrameskip) {
 			gb.display.setColor(INDEX_BLACK);
-			gb.display.println("ON");
+			gb.language.println(lang_settings_on);
 		} else {
 			gb.display.setColor(INDEX_RED);
-			gb.display.println("OFF");
+			gb.language.println(lang_settings_off);
 		}
 		gb.display.setColor(INDEX_WHITE);
-		gb.display.print(" disp mode");
+		gb.display.print(" ");
+		gb.language.print(lang_settings_displaymode);
 		gb.display.setColor(INDEX_BLACK);
 		if (dispUseDMA) {
-			gb.display.println(" fast");
+			gb.display.print(" ");
+			gb.language.println(lang_settings_displaymode_fast);
 		} else {
-			gb.display.println("recordable");
+			gb.language.println(lang_settings_displaymode_recordable);
 		}
 		gb.display.setColor(INDEX_WHITE);
-		gb.display.println(" back");
+		gb.display.print(" ");
+		gb.language.println(lang_settings_back);
 		
 		if ((gb.frameCount%10) < 5) {
 			gb.display.setColor(INDEX_BEIGE);
