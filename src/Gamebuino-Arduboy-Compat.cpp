@@ -263,10 +263,10 @@ void Gamebuino_Arduboy::drawScreenBackground() {
 	}
 	img->fill(INDEX_GREEN);
 	img->setColor(INDEX_WHITE);
-	img->setCursors(0, 0);
+	img->setCursor(0, 0);
 	img->fontSize = 2;
 	img->print(gb.language.get(lang_arduboy_game));
-	img->setCursors(0, 116);
+	img->setCursor(0, 116);
 	img->setColor(INDEX_BEIGE);
 	img->print("\x17");
 	img->setColor(INDEX_WHITE);
@@ -323,7 +323,7 @@ void Gamebuino_Arduboy::settings() {
 		
 		if ((gb.frameCount%10) < 5) {
 			gb.display.setColor(INDEX_BEIGE);
-			gb.display.setCursors(0, cursor*6*2 + 24);
+			gb.display.setCursor(0, cursor*6*2 + 24);
 			gb.display.print(">");
 		}
 		
