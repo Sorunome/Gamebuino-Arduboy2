@@ -285,41 +285,41 @@ void Gamebuino_Arduboy::settings() {
 		gb.display.clear(INDEX_GREEN);
 		gb.display.fontSize = 2;
 		gb.display.setColor(INDEX_WHITE);
-		gb.language.print(lang_settings);
+		gb.display.print(lang_settings);
 		gb.display.print("\n\n ");
-		gb.language.print(lang_settings_cpu);
+		gb.display.print(lang_settings_cpu);
 		gb.display.print(" ");
 		if (dispCpu) {
 			gb.display.setColor(INDEX_BLACK);
-			gb.language.println(lang_settings_on);
+			gb.display.println(lang_settings_on);
 		} else {
 			gb.display.setColor(INDEX_RED);
-			gb.language.println(lang_settings_off);
+			gb.display.println(lang_settings_off);
 		}
 		gb.display.setColor(INDEX_WHITE);
 		gb.display.print(" ");
-		gb.language.print(lang_settings_frameskip);
+		gb.display.print(lang_settings_frameskip);
 		gb.display.print(" ");
 		if (dispFrameskip) {
 			gb.display.setColor(INDEX_BLACK);
-			gb.language.println(lang_settings_on);
+			gb.display.println(lang_settings_on);
 		} else {
 			gb.display.setColor(INDEX_RED);
-			gb.language.println(lang_settings_off);
+			gb.display.println(lang_settings_off);
 		}
 		gb.display.setColor(INDEX_WHITE);
 		gb.display.print(" ");
-		gb.language.print(lang_settings_displaymode);
+		gb.display.print(lang_settings_displaymode);
 		gb.display.setColor(INDEX_BLACK);
 		if (dispUseDMA) {
 			gb.display.print(" ");
-			gb.language.println(lang_settings_displaymode_fast);
+			gb.display.println(lang_settings_displaymode_fast);
 		} else {
-			gb.language.println(lang_settings_displaymode_recordable);
+			gb.display.println(lang_settings_displaymode_recordable);
 		}
 		gb.display.setColor(INDEX_WHITE);
 		gb.display.print(" ");
-		gb.language.println(lang_settings_back);
+		gb.display.println(lang_settings_back);
 		
 		if ((gb.frameCount%10) < 5) {
 			gb.display.setColor(INDEX_BEIGE);
