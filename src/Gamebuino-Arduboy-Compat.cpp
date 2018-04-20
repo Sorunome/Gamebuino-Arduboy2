@@ -11,10 +11,18 @@ bool is_in_settings = false;
 }; // namespace Gamebuino_Arduboy
 
 namespace Gamebuino_Meta {
-extern Adafruit_ZeroDMA myDMA;
-extern volatile bool transfer_is_done;
+#define DMA_DESC_COUNT (3)
+extern volatile uint32_t dma_desc_free_count;
 
-static SPISettings mySPISettings = SPISettings(24000000, MSBFIRST, SPI_MODE0);
+static inline void wait_for_desc_available(const uint32_t min_desc_num) {
+	while (dma_desc_free_count < min_desc_num);
+}
+
+static inline void wait_for_transfers_done(void) {
+	while (dma_desc_free_count < DMA_DESC_COUNT);
+}
+
+static SPISettings tftSPISettings = SPISettings(24000000, MSBFIRST, SPI_MODE0);
 void Hook_ExitHomeMenu() {
 	if (!Gamebuino_Arduboy::is_in_settings) {
 		Gamebuino_Arduboy::gba.drawScreenBackground();
@@ -217,33 +225,27 @@ void Gamebuino_Arduboy::paintScreen(const uint8_t* image) {
 		x + WIDTH - 1,
 		y + HEIGHT - 1
 	);
-	prepareLine(image, 0, preBufferLine);
 	uint8_t bitshift = 0;
 	
-	SPI.beginTransaction(Gamebuino_Meta::mySPISettings);
+	SPI.beginTransaction(Gamebuino_Meta::tftSPISettings);
 	gb.tft.dataMode();
-	for (uint8_t y = 1; y < HEIGHT; y++) {
-		//swap buffers pointers
-		uint16_t *temp = preBufferLine;
-		preBufferLine = sendBufferLine;
-		sendBufferLine = temp;
-		
-		PORT->Group[0].OUTSET.reg = (1 << 17); // set PORTA.17 high	"digitalWrite(13, HIGH)"
-		gb.tft.sendBuffer(sendBufferLine, WIDTH); //start DMA send
-		
-		bitshift++;
+	for (uint8_t y = 0; y < HEIGHT; y++) {
 		if (bitshift >= 8) {
 			bitshift = 0;
 			image += WIDTH;
 		}
 		prepareLine(image, bitshift, preBufferLine);
-		PORT->Group[0].OUTCLR.reg = (1 << 17); // clear PORTA.17 high "digitalWrite(13, LOW)"
-		while (!Gamebuino_Meta::transfer_is_done); // chill
-		Gamebuino_Meta::myDMA.free();
+		bitshift++;
+		//swap buffers pointers
+		uint16_t *temp = preBufferLine;
+		preBufferLine = sendBufferLine;
+		sendBufferLine = temp;
+		
+		gb.tft.sendBuffer(sendBufferLine, WIDTH); //start DMA send
+		
+		Gamebuino_Meta::wait_for_desc_available(2);
 	}
-	gb.tft.sendBuffer(preBufferLine, WIDTH);
-	while (!Gamebuino_Meta::transfer_is_done); // chill
-	Gamebuino_Meta::myDMA.free();
+	Gamebuino_Meta::wait_for_transfers_done();
 	gb.tft.idleMode();
 	SPI.endTransaction();
 }
