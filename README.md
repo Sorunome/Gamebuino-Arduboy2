@@ -41,13 +41,15 @@ The *begin()* function, used to initialize the library, includes features that a
 
 At the start of the sketch, the **ARDUBOY** logo scrolls down from the top of the screen to the center.
 
-The RGB LED lights red then green then blue while the logo is scrolling. (If your Arduboy is one of those that has the RGB LED installed incorrectly, then it will light blue then off then red).
+The RGB LED lights red then green then blue while the logo is scrolling. (If your Arduboy is one of those that has the RGB LED installed incorrectly, then it will light blue then off then red). For users who do not wish to have the RGB LED flash during the boot logo sequence, a flag can be set in system EEPROM to have it remain off. The included *SetSystemEEPROM* example sketch can be used to set this flag.
 
-A user settable *unit name* of up to 6 characters can be saved in system EEPROM memory. If set, this name will be briefly displayed at the bottom of the boot logo screen, after the logo stops scrolling down. This feature is only available if the *Arduboy2* class is used, not the *Arduboy2Base* class. This is because it requires the text display functions, which are only available in the *Arduboy2* class.
+A user settable *unit name* of up to 6 characters can be saved in system EEPROM memory. If set, this name will be briefly displayed at the bottom of the boot logo screen, after the logo stops scrolling down. This feature is only available if the *Arduboy2* class is used, not the *Arduboy2Base* class. This is because it requires the text display functions, which are only available in the *Arduboy2* class. A flag in system EEPROM controls whether or not the *unit name* is displayed on the boot logo screen, regardless of whether the *unit name* itself has been set. The included *SetSystemEEPROM* example sketch can be used to set both the *unit name* and this flag.
 
 Once the logo display sequence completes, the sketch continues.
 
 For developers who wish to quickly begin testing, or impatient users who want to go strait to playing their game, the boot logo sequence can be bypassed by holding the *RIGHT* button while powering up, and then releasing it. Alternatively, the *RIGHT* button can be pressed while the logo is scrolling down.
+
+For users who wish to always disable the displaying of the boot logo sequence on boot up, a flag in system EEPROM is available for this. The included *SetSystemEEPROM* example sketch can be used to set this flag.
 
 ### "Flashlight" mode
 
@@ -107,6 +109,10 @@ Sample sketches have been included with the library as examples of how to use it
 
 More information on writing sketches for the Arduboy can be found in the [Arduboy Community Forum](http://community.arduboy.com/).
 
+### Using EEPROM in a sketch
+
+The Arduboy2 library reserves an area at the start of EEPROM for storing system information, such as the current audio mute state and the Unit Name and Unit ID. A sketch **must not** use this reserved area for its own purposes. A sketch may use any EEPROM past this reserved area. The first EEPROM address available for sketch use is given as the defined value *EEPROM_STORAGE_SPACE_START*
+
 ### Audio control functions
 
 The library includes an Arduboy2Audio class. This class provides functions to enable and disable (mute) sound and also save the current mute state so that it remains in effect over power cycles and after loading a different sketch. It doesn't contain anything to actually produce sound.
@@ -125,11 +131,19 @@ Arduboy2 arduboy;
   arduboy.audio.off();
 ```
 
+### Simple tone generation
+
+The *BeepPin1* and *BeepPin2* classes are available to generate simple square wave tones using speaker pin 1 and speaker pin 2 respectively. These classes are documented in file *Arduboy2Beep.h*. Also, *BeepDemo* is included as one of the example sketches, which demonstrates basic use.
+
+NOTE: These functions will not work with a DevKit Arduboy because the speaker pins used cannot be directly controlled by a timer/counter. "Dummy" functions are provided so a sketch will compile and work properly but no sound will be produced.
+
 ### Ways to make more code space available to sketches
 
 #### Sound effects and music
 
-If you want your sketch to have sound, then using the *ArduboyTones* library will be more code efficient than using *ArduboyPlaytune* or most other sound libraries compatible with the Arduboy. *ArduboyTones* even produces less code than the [Arduino built in *tone()* function](https://www.arduino.cc/en/Reference/Tone). You'll have to decide on the appropriate library or functions you use to generate sound, based on the features required and how much memory you want it to use.
+If all you want is to play single tones, using the built in *BeepPin1* or *BeepPin2* classes will be very efficient.
+
+If you want to be able to play sequences of tones or background music, using the [*ArduboyTones*](https://github.com/MLXXXp/ArduboyTones) library will be more code efficient than using [*ArduboyPlaytune*](https://github.com/Arduboy/ArduboyPlayTune) or most other sound libraries compatible with the Arduboy. *ArduboyTones* even produces less code than the [Arduino built in *tone()* function](https://www.arduino.cc/en/Reference/Tone). You'll have to decide on the appropriate library or functions you use to generate sound, based on the features required and how much memory you want it to use.
 
 #### Remove the text functions
 
@@ -164,7 +178,7 @@ void Arduboy2Base::begin()
 {
   boot(); // raw hardware
 
-  blank(); // blank the display
+  display(); // blank the display (sBuffer is global, so cleared automatically)
 
   flashlight(); // light the RGB LED and screen if UP button is being held.
 
@@ -175,10 +189,7 @@ void Arduboy2Base::begin()
 
   bootLogo();
 
-  // wait for all buttons to be released
-  do {
-    delay(50);
-  } while (buttonsState());
+  waitNoButtons(); // wait for all buttons to be released
 }
 ```
 
@@ -190,7 +201,7 @@ For example: Let's say a sketch has its own code to enable, disable and save the
   arduboy.boot(); // raw hardware
 
 // *** This particular sketch clears the display soon, so it doesn't need this:
-//  blank(); // blank the display
+//  display(); // blank the display (sBuffer is global, so cleared automatically)
 
   arduboy.flashlight(); // light the RGB LED and screen if UP button is being held.
 
@@ -201,19 +212,35 @@ For example: Let's say a sketch has its own code to enable, disable and save the
 
 //  bootLogo();
 
-  // wait for all buttons to be released
-  do {
-    delay(50);
-  } while (arduboy.buttonsState());
+//  waitNoButtons(); // wait for all buttons to be released
 ```
 
-This saves whatever code *blank()*, *systemButtons()* and *bootLogo()* would use.
+This saves whatever code *display()*, *systemButtons()*, *bootLogo()* and *waitNoButtons()* would use.
 
 There are a few functions provided that are roughly equivalent to the standard functions used by *begin()* but which use less code space.
 
-- *bootLogoCompressed()*, *bootLogoSpritesSelfMasked()* and *bootLogoSpritesOverwrite()* will do the same as *bootLogo()* but will use *drawCompressed()*, or *Sprites* class *drawSelfMasked()* or *drawOverwrite()*, functions respectively, instead of *drawBitmask()*, to render the logo. If the sketch uses one of these functions, then using the boot logo function that also uses it may reduce code size. It's best to try each of them to see which one produces the smallest size.
+- *bootLogoCompressed()*, *bootLogoSpritesSelfMasked()*, *bootLogoSpritesOverwrite()*, *bootLogoSpritesBSelfMasked()* and *bootLogoSpritesBOverwrite()* will do the same as *bootLogo()* but will use *drawCompressed()*, or *Sprites* / *SpritesB* class *drawSelfMasked()* or *drawOverwrite()* functions respectively, instead of *drawBitmask()*, to render the logo. If the sketch uses one of these functions, then using the boot logo function that also uses it may reduce code size. It's best to try each of them to see which one produces the smallest size.
 - *bootLogoText()* can be used in place *bootLogo()* in the case where the sketch uses text functions. It renders the logo as text instead of as a bitmap (so doesn't look as good).
 - *safeMode()* can be used in place of *flashlight()* for cases where it's needed to allow uploading a new sketch when the bootloader "magic key" problem is an issue. It only lights the red RGB LED, so you don't get the bright light that is the primary purpose of *flashlight()*.
+
+#### Use the SpritesB class instead of Sprites
+
+The *SpritesB* class has functions identical to the *Sprites* class. The difference is that *SpritesB* is optimized for small code size rather than execution speed. If you want to use the sprites functions, and the slower speed of *SpritesB* doesn't affect your sketch, you may be able to use it to gain some code space.
+
+Even if the speed is acceptable when using *SpritesB*, you should still try using *Sprites*. In some cases *Sprites* will produce less code than *SpritesB*, notably when only one of the functions is used.
+
+You can easily switch between using *Sprites* or *SpritesB* by using one or the other to create an object instance:
+
+```cpp
+Sprites sprites;  // Use this to optimize for execution speed
+SpritesB sprites; // Use this to (likely) optimize for code size
+```
+
+#### Eliminate the USB stack code
+
+**Warning:** Although this will free up a fair amount of code and some RAM space, without an active USB interface uploader programs will be unable to automatically force a reset to invoke the bootloader. This means the user will have to manually initiate a reset in order to upload a new sketch. This can be an inconvenience or even frustrating for a user, due to the fact that timing the sequence can sometimes be tricky. Therefore, using this technique should be considered as a last resort. If it is used, the sketch documentation should state clearly what will be involved to upload a new sketch.
+
+The *ARDUBOY_NO_USB* macro is used to eliminate the USB code. The *exitToBootloader()* function is available to make it easier for a user to invoke the bootloader. For more details, see the documentation provided for these.
 
 ----------
 
@@ -401,7 +428,7 @@ The *beginNoLogo()* function has been removed. Instead, *boot()* can be used wit
 
 ```cpp
   arduboy.boot();
-  arduboy.blank();
+  arduboy.display();
   arduboy.flashlight();
   arduboy.audio.begin();
 ```

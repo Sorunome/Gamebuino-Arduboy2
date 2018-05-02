@@ -79,6 +79,7 @@ void Sprites::drawBitmap(int16_t x, int16_t y,
 
   // xOffset technically doesn't need to be 16 bit but the math operations
   // are measurably faster if it is
+
   int16_t xOffset, ofs;
   int8_t yOffset = abs(y) % 8;
   int8_t sRow = y / 8;

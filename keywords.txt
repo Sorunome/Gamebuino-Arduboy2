@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map For Arduboy
+# Syntax Coloring Map For Arduboy2
 #######################################
 
 #######################################
@@ -8,7 +8,12 @@
 
 Arduboy2	KEYWORD1
 Arduboy2Base	KEYWORD1
+BeepPin1	KEYWORD1
+BeepPin2	KEYWORD1
+Point	KEYWORD1
+Rect	KEYWORD1
 Sprites	KEYWORD1
+SpritesB	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -21,6 +26,8 @@ boot	KEYWORD2
 bootLogo	KEYWORD2
 bootLogoCompressed	KEYWORD2
 bootLogoShell	KEYWORD2
+bootLogoSpritesBOverwrite	KEYWORD2
+bootLogoSpritesBSelfMasked	KEYWORD2
 bootLogoSpritesOverwrite	KEYWORD2
 bootLogoSpritesSelfMasked	KEYWORD2
 bootLogoText	KEYWORD2
@@ -47,6 +54,7 @@ drawSlowXYBitmap	KEYWORD2
 drawTriangle	KEYWORD2
 enabled	KEYWORD2
 everyXFrames	KEYWORD2
+exitToBootloader	KEYWORD2
 fillCircle	KEYWORD2
 fillRect	KEYWORD2
 fillRoundRect	KEYWORD2
@@ -55,9 +63,12 @@ fillTriangle	KEYWORD2
 flashlight	KEYWORD2
 flipVertical	KEYWORD2
 flipHorizontal	KEYWORD2
+freeRGBled	KEYWORD2
+generateRandomSeed	KEYWORD2
 getBuffer	KEYWORD2
 getCursorX	KEYWORD2
 getCursorY	KEYWORD2
+getPixel	KEYWORD2
 getTextBackground	KEYWORD2
 getTextColor	KEYWORD2
 getTextSize	KEYWORD2
@@ -77,12 +88,15 @@ paint8Pixels	KEYWORD2
 paintScreen	KEYWORD2
 pollButtons	KEYWORD2
 pressed	KEYWORD2
+readShowBootLogoFlag	KEYWORD2
+readShowBootLogoLEDsFlag	KEYWORD2
 readShowUnitNameFlag	KEYWORD2
 readUnitID	KEYWORD2
 readUnitName	KEYWORD2
 safeMode	KEYWORD2
 saveOnOff	KEYWORD2
 setCursor	KEYWORD2
+setFrameDuration	KEYWORD2
 setFrameRate	KEYWORD2
 setRGBled	KEYWORD2
 setTextBackground	KEYWORD2
@@ -92,10 +106,19 @@ setTextWrap	KEYWORD2
 SPItransfer	KEYWORD2
 systemButtons	KEYWORD2
 toggle	KEYWORD2
+waitNoButtons	KEYWORD2
 width	KEYWORD2
+writeShowBootLogoFlag	KEYWORD2
+writeShowBootLogoLEDsFlag	KEYWORD2
 writeShowUnitNameFlag	KEYWORD2
 writeUnitID	KEYWORD2
 writeUnitName	KEYWORD2
+
+# Arduboy2Beep classes
+freq	KEYWORD2
+noTone	KEYWORD2
+timer	KEYWORD2
+tone	KEYWORD2
 
 # Sprites class
 drawErase	KEYWORD2
@@ -109,6 +132,8 @@ drawSelfMasked	KEYWORD2
 #######################################
 
 ARDUBOY_LIB_VER	LITERAL1
+
+ARDUBOY_UNIT_NAME_LEN	LITERAL1
 
 EEPROM_STORAGE_SPACE_START	LITERAL1
 
@@ -137,4 +162,6 @@ RED_LED	LITERAL1
 
 RGB_OFF	LITERAL1
 RGB_ON	LITERAL1
+
+ARDUBOY_NO_USB	LITERAL1
 
