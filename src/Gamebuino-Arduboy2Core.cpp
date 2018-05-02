@@ -302,3 +302,24 @@ void Arduboy2Core::delayShort(uint16_t ms)
 {
   delay((unsigned long) ms);
 }
+
+void Arduboy2Core::exitToBootloader()
+{
+  gb.changeGame();
+}
+
+// Replacement main() that eliminates the USB stack code.
+// Used by the ARDUBOY_NO_USB macro. This should not be called
+// directly from a sketch.
+
+void Arduboy2Core::mainNoUSB()
+{
+
+  init();
+  
+  setup();
+
+  for (;;) {
+    loop();
+  }
+}
