@@ -108,12 +108,19 @@ void Gamebuino_Arduboy::adjustFramerate() {
 		frameskip_index = 0;
 	}
 	if (want_framerate == 60) {
+		if (frameskip_index > 5) {
+			frameskip_index = 5;
+		}
 		is_framerate = frameskip_rates_60[frameskip_index];
 		frameskip_max = frameskip_counters_60[frameskip_index];
+		
 		gb.setFrameRate(is_framerate);
 		return;
 	}
 	if (want_framerate == 30) {
+		if (frameskip_index > 5) {
+			frameskip_index = 5;
+		}
 		is_framerate = frameskip_rates_30[frameskip_index];
 		frameskip_max = frameskip_counters_30[frameskip_index];
 		gb.setFrameRate(is_framerate);
